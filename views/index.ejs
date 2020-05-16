@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" 
+    integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="./main.css">
+</head>
+<body>
+    <div class="-full-width -full-height" id="app">
+        <div class="container-fuild -full-width -full-height">
+            <div class="main -full-width -full-height -layout-h">
+                <div class="topics" v-if="!showSearch">
+                    <div class="topic-header -layout-h -center">
+                        <div class="nav">
+                            <div class="avatar -layout-h -center -justify-center -cursor-pointer -relative">
+                                {{ getFirstLetter(me.name) }}
+                                <span class="online -absolute"></span>
+                            </div>
+                            <div class="topic-sort -layout-h -center -cursor-pointer">
+                                <img src="./img/sort-by-alphabet.svg" alt="" class="-full-width -full-height">
+                            </div>
+                            <div class="search" title="search-user" @click.stop="showSearch = true;">
+                                <img src="./img/search.svg" alt="">
+                            </div>
+                            <div class="logout" @click.stop="logout()">
+                                <img src="./img/logout.svg" alt="">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="topic-search">
+                        <div class="-layout-h -center -full-width -full-height">
+                            <input type="text" placeholder="Search" class="form-control">
+                        </div>
+                    </div>
+                    <div class="topic-body">
+                        <h5>Topics</h5>
+                        <ul>
+                            <li class="topic" v-for="topic in topicSort" :key="topic.id" @click.stop="currTopic = topic;getConversation(topic.cid);readTopic(topic)" :class="{active: topic._id == currTopic._id}">
+                                <div class="avatar -relative">
+                                    {{getFirstLetter(getPropertyName(getUserFromTopic(topic)))}}
+                                    <span class="online -absolute"></span>
+                                </div>
+                                <div class="info">
+                                    <p class="name">{{ getPropertyName(getUserFromTopic(topic)) }}</p>
+                                    <p class="job">{{ getPropertyJob(getUserFromTopic(topic)) }}</p>
+                                </div>
+                                <div class="state">
+                                    <p class="time">{{ timeAgo(topic.updated) }}</p>
+                                    <p class="unread" v-if="topic.unread">{{ topic.unread }}</p>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="search-user" v-else>
+                    <div class="form-search">
+                        <input type="text" placeholder="Search" ref="search-user" @keyup="e => searchUser(e.target.value)">
+                        <span @click.stop="showSearch = !showSearch"><img src="./img/close.svg" alt="close"></span>
+                    </div>
+                    <div class="list-user">
+                        <ul>
+                            <li v-for="user in searchUsers" :key="user._id" @click="loadConversation(user.id)">
+                                <div class="avatar -relative">
+                                    {{ getFirstLetter(user.name) }}
+                                    <span class="online -absolute"></span>
+                                </div>
+                                <div class="name">{{ user.name }}</div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="conversations -layout-v">
+                    <div class="conversation-header">    </div>
+                    <div class="conversation-body">
+                        <div class="message -layout-v" v-for="message in conversation" :key="message._id" :class="{me: message.by == me.id}">
+                            <div class="-layout-h -center" :class="{'-layout-h-rv': message.by == me.id}">
+                                <div class="by">
+                                    <div class="avatar -relative">
+                                        {{ getFirstLetter(getPropertyName(users[message.by])) }}
+                                        <span class="online -absolute"></span>
+                                    </div>
+                                </div>
+                                <div class="event-messages">
+                                    <div class="text">{{ message.msg }}</div>
+                                </div>
+                            </div>
+                            <div class="time">{{ format(message.timestamp) }}</div>
+                        </div>
+                        <!-- <div class="message -layout-v me">
+                            <div class="-layout-h-rv -center">
+                                <div class="by">
+                                    <div class="avatar -relative">
+                                        A
+                                        <span class="online -absolute"></span>
+                                    </div>
+                                </div>
+                                <div class="event-messages">
+                                    <div class="text">Welcome to app chat!</div>
+                                    <div class="text">Welcome to app chat!</div>
+                                </div>
+                            </div>
+                            <div class="time">10:47</div>
+                        </div> -->
+                    </div>
+                    <div class="conversation-bottom">
+                        <div class="emoji">
+                            <img src="./img/emoji.svg" alt="">
+                        </div>
+                        <div class="input-message">
+                            <input type="text" class="form-control" placeholder="Type a message..." @change="sendMessage" v-model="text">
+                            <!-- <form action="">
+                                <input id="m" autocomplete="off" /><button>Send</button>
+                              </form> -->
+                        </div>
+                        <div class="link">
+                            <img src="./img/link.svg" alt="">
+                        </div>
+                        <div class="button-send-message">
+                            <img src="./img/telegram.svg" alt="">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/timeago.js/4.0.2/timeago.min.js" integrity="sha256-sTurDi2etLN9CpnUIoCC9y5iynb2qr/uo6QJqzoO7mA=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.8.23/dayjs.min.js" integrity="sha256-cWonUId5xt6NkGriuU0+9b+pO+LlBm2LKIIzITvRyBI=" crossorigin="anonymous"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.15/lodash.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+    <script src="./js/main.js"></script>
+</body>
+</html>
